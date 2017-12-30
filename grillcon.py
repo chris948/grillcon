@@ -21,7 +21,7 @@ config_file_name = "grillcon_settings.cfg"
 key_file_name = "key.txt"
 config_file = os.path.join(path, config_file_name)
 key_file = os.path.join(path, key_file_name)
-print "full is %s" % config_file
+print "full path is %s" % config_file
 
 
 # CP 12-8-16 Adding IP Address
@@ -416,14 +416,27 @@ class LCDDisplay:
                 ip_address_string = ip_address_string.ljust(15, ' ')
 
             except Exception:
-                print "IP address read error"
+                print 'IP address read error'
                 pass
 
-            for i in reversed(xrange(16)):
-                self.mylcd.lcd_display_string_pos("Status: Off    ", 1, i)  # row 1, column 1
-                time.sleep(.25)
-                # CP 12-8-16 adding IP address to display
-                self.mylcd.lcd_display_string_pos(("IP:%s" % ip_address_string), 2, i)  # row 2, column 2
+
+        lcd_ip_string = "IP:%s" % ip_address_string
+        x=16
+
+		#Add blank lines to the end of the string if less than 16 characters for the LCD screen
+        if len(lcd_ip_string) < 16:
+            lcd_ip_string = '{:16}'.format(lcd_ip_string)
+
+        for i in reversed(xrange(len(lcd_ip_string))):
+            #print i
+            self.mylcd.lcd_display_string_pos("Status: Off    ", 1, i)  # row 1, column 1
+            time.sleep(.25)
+            self.mylcd.lcd_display_string_pos(lcd_ip_string, 2, i)  # row 2, column 2
+               
+			#if the lcd string is longer than 16 characters, start cutting the beginning of the string to read the end
+            x = x-1
+            if x < 1:
+                lcd_ip_string = lcd_ip_string[1:]
         else:
             for i in reversed(xrange(16)):
                 # row 1, column 1
