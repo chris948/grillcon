@@ -3,3 +3,4 @@ key.txt
 *.cfg
 Testing/**
 *.json
+*.sqlite

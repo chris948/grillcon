@@ -3,9 +3,15 @@
 #grillcon
 #Chris Pangburn - 2016
 
-from controller.py import Controller
+from controller import Controller
+from rest import BottleServer
 
 if __name__ == "__main__":
 
-    Controller.start()
+    myController = Controller()
+    myController.start()
+
+    myWebApp = BottleServer()
+    myWebApp.run(host='localhost', port=8080)
+    
     

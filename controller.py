@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+#todo - make key file, 
+
 import time
 import os
 import datetime
@@ -34,10 +38,9 @@ class ConfigCreate:
         if os.path.isfile(self.config_file):
             print "loaded config file"
         else:
-            ConfigCreate.make_config_file()
+            ConfigCreate.make_config_file(self)
 
-    @staticmethod
-    def make_config_file():
+    def make_config_file(self):
 
         parser = ConfigParser.SafeConfigParser()
         parser.add_section('grillcon_settings')
@@ -456,8 +459,9 @@ class Controller:
 
         self.mylcd = i2c_8574.lcd()
 
-        ConfigCreate(config_file_location)
-        self.settings_object = ConfigRead(config_file_location)
+        myConfigCreate = ConfigCreate(self.config_file_location)
+        #ConfigCreate(self.config_file_location)
+        self.settings_object = ConfigRead(self.config_file_location)
 
         # Board Setup
         GPIO.setmode(GPIO.BCM)  # This example uses the BCM pin numbering
@@ -495,11 +499,11 @@ class Controller:
 
         self.cipher_instance = cipher_functions.CipherFunctions(self.key_file_location)
 
-        self.config_modified = os.path.getmtime(self.config_file)
+        self.config_modified = os.path.getmtime(self.config_file_location)
         
 
         if self.debug == True:
-            print 'full path is %s' % self.config_file
+            print 'full path is %s' % self.config_file_location
             print 'cs0 pin %s ' % self.CS0
             print 'cs1 pin %s ' % self.CS1
             print "grillcon config last modified on %s" % self.config_modified
@@ -560,7 +564,8 @@ class Controller:
                         if datetime.datetime.now() > (self.database_write + datetime.timedelta(seconds=self.write_interval)):
                             self.database_write = datetime.datetime.now()
                             if self.my_grill_temp > 0:
-                                DatabaseWrite.log_temperature(self.database_location, self.my_timestamp, self.my_grill_temp, self.my_meat_temp, self.my_target_grill_temp,
+                                DatabaseWrite.log_temperature(self.database_location, self.my_timestamp, self.my_grill_temp, 
+                                                              self.my_meat_temp, self.my_target_grill_temp,
                                                               self.my_fan_speed, self.my_cook_name)
 
                         # if temperature is +-20 from target, and 10 minutes has elapsed,
