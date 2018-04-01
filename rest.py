@@ -1,5 +1,6 @@
 
 #!/usr/bin/env python
+
 from __future__ import generators  # needs to be at the top of your module
 import os
 import sys
@@ -47,8 +48,7 @@ class ConfigSettings:
             dict_settings[name] = value
         return dict_settings
 
-    # generate a list of the settings and values, this will be used to create
-    # an ordered dictionary
+    # generate a list of the settings and values, this will be used to create an ordered dictionary
     # @staticmethod
     def get_settings_lists(self):
 
@@ -94,13 +94,14 @@ class Validations:
 
     @staticmethod
     def validate_input_grill_int(send_cook_target, send_cook_finish):
-        if (0 > send_cook_target > 1000) and (0 > send_cook_finish >= 1000):
+        if (0 < send_cook_target <= 1000) and (0 < send_cook_finish <= 400):
             return True
         else:
             return False
 
     @staticmethod
     def validate_input(database_location, send_cook_name, send_cook_target, send_cook_finish):
+	print'entering validations'
         try:
             send_cook_name = str(send_cook_name)
             send_cook_target = int(send_cook_target)
@@ -109,20 +110,24 @@ class Validations:
             print "An validate input error occurred"
 
         # check that the option is within a specific range
-        # if (send_cook_target > 0 and send_cook_target <= 1000) and
-        # (send_cook_finish > 0 and send_cook_finish <= 1000):
-        if validate_input_grill_int(send_cook_target, send_cook_finish):
-            # print 'validated 1'
-            if (send_cook_name == "Brisket" or send_cook_name == "Shoulder Roast" or send_cook_name == "Ribs" or send_cook_name == "Other"):
-                # print 'validated 2'
+        # if (send_cook_target > 0 and send_cook_target <= 1000) and (send_cook_finish > 0 and send_cook_finish <= 1000):
+        if Validations.validate_input_grill_int(send_cook_target, send_cook_finish):
+            print 'validated 1'
+            if (send_cook_name == "Brisket" or
+                    send_cook_name == "Shoulder Roast" or
+                    send_cook_name == "Ribs" or
+                    send_cook_name == "Other"):
+                print 'validated 2'
 
                 today = datetime.datetime.now().date()
                 send_cook_name = send_cook_name + " " + str(today)
                 tuple_send_cook = (send_cook_name, send_cook_target, send_cook_finish, 1,)
 
                 SQLQueries().write_input(database_location, tuple_send_cook)
+                print "ran write_input"
 
         else:
+	    print 'returning none'
             return None
 
     @staticmethod
@@ -135,7 +140,7 @@ class Validations:
             send_cook_name = dict_variables_template["name"]
 
             # check that the option is within a specific range
-            if validate_input_grill_int(send_cook_target, send_cook_finish):
+            if Validations.validate_input_grill_int(send_cook_target, send_cook_finish):
                 tuple_send_cook = (send_cook_name, send_cook_target, send_cook_finish, 1,)
                 SQLQueries().write_input(database_location, tuple_send_cook)
         except Exception:
@@ -145,49 +150,49 @@ class Validations:
 
 class GetSettings():
 
-    def __init__(self):
+	def __init__(self):
+	
+	        self.os_path = os.path.dirname(os.path.realpath(__file__))
+	
+	        self.settings_file = "grillcon_settings.cfg"
+	        self.key_file = "key.txt"
+	
+	        self.grillcon_off_template = self.os_path + "/views/grillcon_main_off.tpl"
+	        self.grillcon_on_template = self.os_path + "/views/grillcon_main_on.tpl"
+	        self.grillcon_history_template = self.os_path + "/views/grillcon_history.tpl"
+	        self.grillcon_admin_template = self.os_path + "/views/grillcon_admin.tpl"
+	        self.grillcon_icon_file = self.os_path + "/static/favicon.ico"
+	
+	        self.settings_file = os.path.join(self.os_path, self.settings_file)
+	        self.key_file = os.path.join(self.os_path, self.key_file)
     
-            self.os_path = os.path.dirname(os.path.realpath(__file__))
-    
-            self.settings_file = "grillcon_settings.cfg"
-            self.key_file = "key.txt"
-    
-            self.grillcon_off_template = self.os_path + "/views/grillcon_main_off.tpl"
-            self.grillcon_on_template = self.os_path + "/views/grillcon_main_on.tpl"
-            self.grillcon_history_template = self.os_path + "/views/grillcon_history.tpl"
-            self.grillcon_admin_template = self.os_path + "/views/grillcon_admin.tpl"
-            self.grillcon_icon_file = self.os_path + "/static/favicon.ico"
-    
-            self.settings_file = os.path.join(self.os_path, self.settings_file)
-            self.key_file = os.path.join(self.os_path, self.key_file)
-    
-            self.read_config_settings = ConfigSettings(self.settings_file)
-            self.database_location = self.read_config_settings.get_settings_string("database_location")
-            print "database location is %s" % self.database_location
-        
-    def getOffTemplate(self):
-        return self.grillcon_off_template
-    
-    def getOnTemplate(self):
-        return self.grillcon_on_template
+                self.read_config_settings = ConfigSettings(self.settings_file)
+    	        self.database_location = self.read_config_settings.get_settings_string("database_location")
+       		print "database location is %s" % self.database_location
+		
+	def getOffTemplate(self):
+		return self.grillcon_off_template
+	
+	def getOnTemplate(self):
+		return self.grillcon_on_template
 
-    def getHistoryTemplate(self):
-        return self.grillcon_history_template
+	def getHistoryTemplate(self):
+		return self.grillcon_history_template
 
-    def getAdminTemplate(self):
-        return self.grillcon_admin_template
-    
-    def getIconFile(self):
-        return self.grillcon_icon_file
+	def getAdminTemplate(self):
+		return self.grillcon_admin_template
+	
+	def getIconFile(self):
+		return self.grillcon_icon_file
 
-    def getKeyFile(self):
-        return self.key_file
+	def getKeyFile(self):
+		return self.key_file
 
-    def getSettingsFile(self):
-        return self.settings_file
+	def getSettingsFile(self):
+		return self.settings_file
 
-    def getDatabaseFile(self):
-        return self.database_location
+	def getDatabaseFile(self):
+		return self.database_location
 
 class BottleServer(Bottle):
 
@@ -195,39 +200,39 @@ class BottleServer(Bottle):
 
         super(BottleServer, self).__init__()
 
-    mySettings = GetSettings()
-    
+	mySettings = GetSettings()
+	
 
-    self.grillcon_off_template = mySettings.getOffTemplate()
-    self.grillcon_on_template = mySettings.getOnTemplate()
-    self.grillcon_history_template = mySettings.getHistoryTemplate()
-    self.grillcon_admin_template = mySettings.getAdminTemplate()
-    self.grillcon_icon_file = mySettings.getIconFile()
-    
-    self.my_key_file = mySettings.getKeyFile()
-    self.my_settings_file = mySettings.getSettingsFile()
-    self.database_location = mySettings.getDatabaseFile()
+	self.grillcon_off_template = mySettings.getOffTemplate()
+	self.grillcon_on_template = mySettings.getOnTemplate()
+	self.grillcon_history_template = mySettings.getHistoryTemplate()
+	self.grillcon_admin_template = mySettings.getAdminTemplate()
+        self.grillcon_icon_file = mySettings.getIconFile()
+	
+	self.my_key_file = mySettings.getKeyFile()
+	self.my_settings_file = mySettings.getSettingsFile()
+	self.database_location = mySettings.getDatabaseFile()
 
-    #self._host = host
-    #self._port = port
-    #self._app = Bottle()
-    self.route('/main', method=['GET', 'POST'], callback=self.main)
-    self.route('/history', method=['GET', 'POST'], callback=self.history)
-    self.route('/admin', callback=self.admin)
-    self.route('/admin', method='POST', callback=self.admin_post)
-    self.route('/json', callback=self.json)
-    self.route('/getupdate.json', callback=self.json_getupdates)
-    #self.route('/favicon.ico', method='GET', callback=self.get_favicon)
-    self.route('/', callback=self.index)
-    self.route('/static/css<filepath:re:.*\.css>', callback=self.css)
-    self.route('/static/ico<filepath:re:.*\.ico>', callback=self.ico)
-    self.route('error(403)', callback=self.mistake403)
-    self.route('error(404)', callback=self.mistake404)
+        #self._host = host
+        #self._port = port
+        #self._app = Bottle()
+        self.route('/main', method=['GET', 'POST'], callback=self.main)
+        self.route('/history', method=['GET', 'POST'], callback=self.history)
+        self.route('/admin', callback=self.admin)
+        self.route('/admin', method='POST', callback=self.admin_post)
+        self.route('/json', callback=self.json)
+        self.route('/getupdate.json', callback=self.json_getupdates)
+        #self.route('/favicon.ico', method='GET', callback=self.get_favicon)
+        self.route('/', callback=self.index)
+        self.route('/static/css<filepath:re:.*\.css>', callback=self.css)
+        self.route('/static/ico<filepath:re:.*\.ico>', callback=self.ico)
+        self.route('error(403)', callback=self.mistake403)
+        self.route('error(404)', callback=self.mistake404)
         
     def auth_check(username, password):
 
-        mySettings = GetSettings()
-        database_location = mySettings.getDatabaseFile()
+	mySettings = GetSettings()
+	database_location = mySettings.getDatabaseFile()
 
         list_user = SQLQueries().user_query(database_location, 'admin')
 
@@ -242,7 +247,8 @@ class BottleServer(Bottle):
             self.send_cook_target = request.POST.get('option_target_temp', '').strip()
             self.send_cook_finish = request.POST.get('option_finish_temp', '').strip()
             # send user inputs to validate function
-            Validations.validate_input(self.database_location, self.self.send_cook_name, self.send_cook_target, self.send_cook_finish)
+            print 'trying validations'
+            Validations.validate_input(self.database_location, self.send_cook_name, self.send_cook_target, self.send_cook_finish)
             time.sleep(7.0)
             redirect('/main')
 
@@ -254,8 +260,7 @@ class BottleServer(Bottle):
             time.sleep(5.0)
             redirect('/main')
 
-        # if receive option off, create tuple with None and 0 turning off the
-        # controller
+        # if receive option off, create tuple with None and 0 turning off the controller
         if request.POST.get('option_off', '').strip():
             self.tuple_send_cook = (None, None, None, 0)
             SQLQueries().write_input(self.database_location, self.tuple_send_cook)
@@ -272,14 +277,13 @@ class BottleServer(Bottle):
             redirect('/main')
 
         else:
-            print "DATABASE LOCATION"
-            print self.database_location
+	    print "DATABASE LOCATION"
+	    print self.database_location
             # call last row results into a dictionary
             self.dict_variables_template = SQLQueries.variables_last_row_results(self.database_location)
             # if 'status' == 1 the grill controller is on
             if self.dict_variables_template["status"] == 1:
-                # populate the dictionary to create the web page showing the
-                # controller as on
+                # populate the dictionary to create the web page showing the controller as on
                 self.dict_variables_row = self.dict_variables_template
                 # get last row cook name
                 self.dict_temps_row = SQLQueries.dict_temps_last_row_results(self.database_location)
@@ -291,12 +295,11 @@ class BottleServer(Bottle):
                 # get notes for the last cook
                 self.cook_notes = SQLQueries.cook_notes(self.database_location, self.last_cook_name)
 
-                return template(self.grillcon_on_template, get_url=self.url, rows=self.cook_graph,
+                return template(self.grillcon_on_template, get_url=url, rows=self.cook_graph,
                                 dict_variables_row=self.dict_variables_row, dict_temps_row=self.dict_temps_row, cook_notes=self.cook_notes)
 
             else:
-                # print "file path is %s /n template path is %s /n complete
-                # file is %s" %
+                # print "file path is %s /n template path is %s /n complete file is %s" %
                 # (path, grillcon_off_template, template_path)
                 return template(self.grillcon_off_template, get_url=url)
 
@@ -307,8 +310,7 @@ class BottleServer(Bottle):
             # postdata = request.body.read()
             # show data received from client for debugging purposes
             # print postdata
-            # graph value equals the user input selecting a cook name to
-            # populate a graph
+            # graph value equals the user input selecting a cook name to populate a graph
             self.graph_value = request.forms.get('historyName')
             # get records for the last cook name
             self.cook_row_result = SQLQueries().cook_rows(self.database_location, self.graph_value)
@@ -317,7 +319,7 @@ class BottleServer(Bottle):
             self.cook_list = SQLQueries().cook_history(self.database_location)
             self.cook_notes = SQLQueries.cook_notes(self.database_location, self.graph_value)
 
-            return template(self.grillcon_history_template, get_url=self.url, rows=self.cook_graph, list=self.cook_list,
+            return template(self.grillcon_history_template, get_url=url, rows=self.cook_graph, list=self.cook_list,
                             cook_notes=self.cook_notes, graph_value=self.graph_value)
 
         # if notesSubmit, update the notes table for the specified cook
@@ -339,7 +341,7 @@ class BottleServer(Bottle):
             self.cook_list = SQLQueries().cook_history()
             self.cook_notes = SQLQueries.cook_notes(self.graph_value)
 
-            return template(self.grillcon_history_template, get_url=self.url, rows=self.cook_graph, list=self.cook_list,
+            return template(self.grillcon_history_template, get_url=url, rows=self.cook_graph, list=self.cook_list,
                             cook_notes=self.cook_notes, graph_value=self.graph_value)
 
         else:
@@ -368,27 +370,26 @@ class BottleServer(Bottle):
         self.dict_settings = self.my_settings.get_settings_dict()
         self.list_user = SQLQueries().user_query(self.database_location, 'admin')
 
-        # to keep the list in order, get_settings_lists returns 2 lists, key
-        # and value
+        # to keep the list in order, get_settings_lists returns 2 lists, key and value
         # they are combined to make a OrderedDict dictionary
         self.list_a, self.list_b = self.my_settings.get_settings_lists()
         self.list_settings = collections.OrderedDict(zip(self.list_a, self.list_b))
 
         # cipher_instance = cipher_functions.CipherFunctions(key_file)
-        # print "Plaintext password is %s" %
-        # cipher_instance.decode(dict_settings['email_password'])
+        # print "Plaintext password is %s" % cipher_instance.decode(dict_settings['email_password'])
 
         return template(self.grillcon_admin_template,
                         cook_list=SQLQueries().cook_history(self.database_location),
                         dict_settings=self.dict_settings,
                         list_settings=self.list_settings,
                         get_url=url,
-                        list_user=self.list_user,)
+                        list_user=self.list_user,
+                        )
 
     #@route('/admin', method='POST')
     def admin_post(self):
         # postdata = request.body.read()
-        # print postdata # this goes to log file only, not to client
+        # print postdata  # this goes to log file only, not to client
 
         if request.forms.get('settingsSubmit'):
             print "settings info received"
@@ -427,9 +428,11 @@ class BottleServer(Bottle):
 
         if request.forms.get('userSubmit'):
 
-            self.tuple_new_users = (request.POST.get("user_username", '').strip(),
+            self.tuple_new_users = (
+                request.POST.get("user_username", '').strip(),
                 request.POST.get("user_password", '').strip(),
-                request.POST.get("user_role", '').strip(),)
+                request.POST.get("user_role", '').strip(),
+            )
 
             SQLQueries().update_user(self.database_location, self.tuple_new_users)
 
@@ -459,7 +462,7 @@ class BottleServer(Bottle):
     #@route('/getupdate.json')
     def json_getupdates(self):
         # postdata = request.body.read()
-        # print postdata # this goes to log file only, not to client
+        # print postdata  # this goes to log file only, not to client
         self.temps_timestamp, self.temps_grill_temp, self.temps_meat_temp, self.temps_fan = SQLQueries.temps_last_row_results(self.database_location)
 
         self.items = {"0": self.temps_grill_temp, "1": self.temps_meat_temp, "2": self.temps_fan, "3": self.temps_timestamp}
@@ -489,4 +492,5 @@ class BottleServer(Bottle):
 if __name__ == "__main__":
     myWebApp = BottleServer()
     myWebApp.run(host='localhost', port=8080)
+    #myWebApp.run(host='localhost', port=8080, debug=True)
 

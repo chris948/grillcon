@@ -3,6 +3,7 @@
 #todo - make key file, 
 
 import time
+import threading
 import os
 import datetime
 import math
@@ -167,19 +168,19 @@ class Cook:
 
         try:
             temp_grill_temp = grill_sensor.readThermocoupleTemp()
-            if temp_grill_temp > 0:
+            if temp_grill_temp > 0 and temp_grill_temp < 1000:
                 self.cook_grill_temp = int(temp_grill_temp * 9.0 / 5.0 + 32.0)
             else:
                 temp_grill_temp = grill_sensor.readThermocoupleTemp()
-                if temp_grill_temp > 0:
+                if temp_grill_temp > 0 and temp_grill_temp < 1000:
                     self.cook_grill_temp = int(temp_grill_temp * 9.0 / 5.0 + 32.0)
 
             temp_meat_temp = meat_sensor.readThermocoupleTemp()
-            if temp_meat_temp > 0:
+            if temp_meat_temp > 0 and temp_meat_temp < 1000:
                 self.cook_meat_temp = int(temp_meat_temp * 9.0 / 5.0 + 32.0)
             else:
                 temp_meat_temp = meat_sensor.readThermocoupleTemp()
-                if temp_meat_temp > 0:
+                if temp_meat_temp > 0 and temp_meat_temp < 1000:
                     self.cook_meat_temp = int(temp_meat_temp * 9.0 / 5.0 + 32.0)
 
         except Exception as e:
@@ -200,13 +201,14 @@ class Cook:
 
 # Class for fan calculation
 class Fan:
-    def __init__(self, fan_target_temp, fan_grill_temp, fan_min, fan_multiplier, fan_tolerance):
+    def __init__(self, fan_target_temp, fan_grill_temp, fan_min, fan_multiplier, fan_tolerance, pwm):
         self.fan_target_temp = fan_target_temp
         self.fan_grill_temp = fan_grill_temp
         self.fan_speed = 0
         self.fan_min = fan_min
         self.fan_multiplier = fan_multiplier
         self.fan_tolerance = fan_tolerance
+	self.pwm = pwm
 
         # Prevents pwm value from being too low and stalling fan at low temp
         # differences
@@ -231,7 +233,7 @@ class Fan:
             self.fan_speed = int(40)
 
     def fan_change(self):
-        pwm.ChangeDutyCycle(self.fan_speed)
+        self.pwm.ChangeDutyCycle(self.fan_speed)
         # if self.fan_speed > 1:
         # led_blink(.25,3)
 
@@ -247,7 +249,7 @@ class Fan:
 # class that calls sendEmail for alerts
 # noinspection PyBroadException
 class AlertSend:
-    def __init__(self, login_name, login_pass, send_alert_to):
+    def __init__(self, login_name, login_pass, send_alert_to, key_file):
         self.loginName = login_name
         cipher_instance_alert = cipher_functions.CipherFunctions(key_file)
         self.loginPass = cipher_instance_alert.decode(login_pass)
@@ -478,8 +480,8 @@ class Controller:
         self.CS1 = self.settings_object.CS1   
         self.DO = self.settings_object.DO
         self.DI = self.settings_object.DI
-        self.grill_sensor = max31856.max31856(self.CS0, self.DO, self.DI, self.CLK)
-        self.meat_sensor = max31856.max31856(self.CS1, self.DO, self.DI, self.CLK)
+        self.grill_sensor = max31856.max31856(self.CS1, self.DO, self.DI, self.CLK)
+        self.meat_sensor = max31856.max31856(self.CS0, self.DO, self.DI, self.CLK)
 
         # PWM logic
         self.pwm = GPIO.PWM(17, 60)  # pwm is an object on BCM pin 17 and default is 60hz)
@@ -510,6 +512,10 @@ class Controller:
             print "Email address is %s" % self.settings_object.email_address
             print "Password is %s" % self.settings_object.email_password
             print "Password is %s" % self.cipher_instance.decode(self.settings_object.email_password)
+
+            thread = threading.Thread(target=self.start, args=())
+            thread.daemon = True
+            thread.start()
 
     def start(self):
 
@@ -547,7 +553,7 @@ class Controller:
                         # create an object of the fan class passing the target grill temp and the current grill temp
                         self.fan_instance = Fan(self.target_instance.grill_temp(), self.cook_instance.grill_temp(),
                                            self.settings_object.fan_min, self.settings_object.fan_multiplier,
-                                           self.settings_object.fan_tolerance)
+                                           self.settings_object.fan_tolerance, self.pwm)
                         # create variables for the log_temperature function
                         self.my_timestamp, self.my_grill_temp, self.my_meat_temp = self.cook_instance.output()
                         self.my_target_grill_temp, self.my_target_meat_temp, self.my_cook_name = self.target_instance.output()
@@ -564,14 +570,14 @@ class Controller:
                         if datetime.datetime.now() > (self.database_write + datetime.timedelta(seconds=self.write_interval)):
                             self.database_write = datetime.datetime.now()
                             if self.my_grill_temp > 0:
-                                DatabaseWrite.log_temperature(self.database_location, self.my_timestamp, self.my_grill_temp, 
-                                                              self.my_meat_temp, self.my_target_grill_temp,
+                                DatabaseWrite.log_temperature(self.database_location, self.my_timestamp, self.my_grill_temp, self.my_meat_temp, self.my_target_grill_temp,
                                                               self.my_fan_speed, self.my_cook_name)
 
                         # if temperature is +-20 from target, and 10 minutes has elapsed,
                         # send alert
 #Todo move these variables where they aren't constantly redefined
                         self.alert_interval = self.settings_object.alert_interval
+                        #self.alert_interval = 60
                         if datetime.datetime.now() > (self.counter + datetime.timedelta(seconds=self.alert_interval)):
                             self.delta_temp = self.settings_object.delta_temp
                             self.email_address = self.settings_object.email_address
@@ -579,16 +585,16 @@ class Controller:
                             self.send_to = self.settings_object.send_to
                             if self.my_grill_temp > (self.target_instance.grill_temp() + self.delta_temp) or self.my_grill_temp < \
                                     (self.target_instance.grill_temp() - self.delta_temp):
-                                AlertSend(self.email_address, self.email_password, self.send_to).grill_temp_warning(self.my_grill_temp,
+                                AlertSend(self.email_address, self.email_password, self.send_to, self.key_file_location).grill_temp_warning(self.my_grill_temp,
                                                                                                      self.my_target_grill_temp)
                                 # if meat is within 1 degree of target, send SMS
                             if self.my_meat_temp > (self.my_target_meat_temp - 2):
-                                AlertSend(self.email_address, self.email_password, self.send_to).meat_temp_warning(self.my_grill_temp,
+                                AlertSend(self.email_address, self.email_password, self.send_to, self.key_file_location).meat_temp_warning(self.my_grill_temp,
                                                                                                     self.my_meat_temp)
                             # when thermister value is wrong, method returns grill temp as 0.
                             # if 0, sens SMS
                             if self.my_grill_temp < 1:
-                                AlertSend(self.email_address, self.email_password, self.send_to).grill_temp_warning(my_grill_temp,
+                                AlertSend(self.email_address, self.email_password, self.send_to, self.key_file_location).grill_temp_warning(my_grill_temp,
                                                                                                      my_target_grill_temp)
                             self.counter = datetime.datetime.now()
                         if self.use_LCD:
