@@ -16,13 +16,13 @@ if __name__ == "__main__":
       OpenPort: 53/tcp
       Service: domain (DNS/TCP)
       """
-    try:
-        socket.setdefaulttimeout(timeout)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-        return True
-    except Exception as ex:
-        print ex.message
-        return False
+        try:
+            socket.setdefaulttimeout(timeout)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+            return True
+        except Exception as ex:
+            print ex.message
+            return False
 
     myController = Controller()
     #moved the start call to the init
