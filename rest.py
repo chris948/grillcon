@@ -256,7 +256,7 @@ class BottleServer(Bottle):
             self.send_cook_target = request.POST.get('option_target_temp', '').strip()
             self.send_cook_finish = request.POST.get('option_finish_temp', '').strip()
             # send to validate data function
-            Validations.validate_input_modify(self.database_location, send_cook_target, send_cook_finish)
+            Validations.validate_input_modify(self.database_location, self.send_cook_target, self.send_cook_finish)
             time.sleep(5.0)
             redirect('/main')
 
